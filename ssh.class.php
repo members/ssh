@@ -13,7 +13,7 @@
  * Using:
  * |
  * |- Connect:
- * |  | $ssh = new ssh('localhost', 'root', 'password');
+ * |  | $ssh = new ssh('localhost', 'root', 'password'[, $port = 22]);
  * |
  * |- Exec command:
  * |  | $result = $ssh("ls -la");
@@ -29,7 +29,7 @@
  * |  | $ssh->download("/remote/file", "/local/file");
  * |
  * |- Upload:
- * |  | $ssh->upload("/local/file", "/remote/file");
+ * |  | $ssh->upload("/local/file", "/remote/file"[, $file_mode = 0644]);
  * |
  * |- Reconnect:
  * |  | $ssh->reconnect();
@@ -39,10 +39,6 @@
  * Thx 4 using;
  *
  */
-
-
-
-
 
 class ssh {
 	private $host      = "localhost";
@@ -84,35 +80,35 @@ class ssh {
 	}
 
 	public function tunnel($host = "localhost", $port = 22) {
-		if ( ! $this->connected) {
+		if( ! $this->connected) {
 			$this->connect();
 		}
 		return ssh2_tunnel($this->connect, $host, $port);
 	}
 
 	public function reconnect() {
-		if ($this->connected) {
+		if($this->connected) {
 			ssh2_exec($this->connect, 'exit');
 		}
 		return $this->connect();
 	}
 
 	public function download($remote_file = "/", $local_file = "/") {
-		if ( ! $this->connected) {
+		if( ! $this->connected) {
 			$this->connect();
 		}
 		ssh2_scp_recv($this->connect, $remote_file, $local_file);
 	}
 
-	public function upload($local_file = "/", $remote_file = "/", $chmod = 0644) {
-		if ( ! $this->connected) {
+	public function upload($local_file = "/", $remote_file = "/", $file_mode = 0644) {
+		if( ! $this->connected) {
 			$this->connect();
 		}
-		return ssh2_scp_send($this->connect, $local_file, $remote_file, $chmod);
+		return ssh2_scp_send($this->connect, $local_file, $remote_file, $file_mode);
 	}
 
 	private function connect() {
-		if ( ! $this->connected) {
+		if( ! $this->connected) {
 			$this->connect   = ssh2_connect($this->host, $this->port);
 			$this->connected = ssh2_auth_password($this->connect, $this->login, $this->password);
 			if ( ! $this->connected) {
@@ -123,7 +119,7 @@ class ssh {
 	}
 
 	private function exec($cmd) {
-		if ( ! $this->connected) {
+		if( ! $this->connected) {
 			$this->connect();
 		}
 		$data = "";
@@ -141,7 +137,7 @@ class ssh {
 	}
 
 	private function disconnect () {
-		if ($this->connected) {
+		if($this->connected) {
 			ssh2_exec($this->connect, 'exit');
 		}
 	}
