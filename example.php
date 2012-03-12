@@ -8,10 +8,10 @@ include("ssh.class.php");
 
 $server_host = "ssh.example.com";
 $server_login = "root";
-$server_password = "123456"; // Didn't user simple passwords
+$server_password = "123456"; // Didn't use simple passwords
 
 $mysql_user = "root";
-$mysql_password = "123456"; // Didn't user simple passwords
+$mysql_password = "123456"; // Didn't use simple passwords
 $mysql_database = "base";
 
 // Connect:
