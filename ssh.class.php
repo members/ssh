@@ -24,7 +24,7 @@
  * |  | $array_of_result = $ssh("ls -la", "uptime");
  * |
  * |- Tunnel:
- * |  | $ssh-tunnel("10.0.0.100", 1234);
+ * |  | $ssh->tunnel("10.0.0.100", 1234);
  * |
  * |- Download:
  * |  | $ssh->download("/remote/file", "/local/file");
