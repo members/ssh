@@ -1,6 +1,6 @@
 <?php
 
-/*
+/**
  * Simple script for backup MySQL database on remote server
  */
 
@@ -21,6 +21,10 @@ $ssh = new ssh($server_host, $server_login, $server_password);
 $ssh("mysqldump -u $mysql_user -p{$mysql_password} $mysql_database > /tmp/bases", "gzip -9 /tmp/bases");
 
 // Download backup:
-$ssh->download("/tmp/bases.gz", "/tmp/bases.gz");
+$ssh->download("/tmp/bases.gz", "/my/backups/dir/bases.gz");
+
+// Delete backup on server
+$ssh("rm /tmp/bases.gz");
+
 
 ?>
