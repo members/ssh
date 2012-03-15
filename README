@@ -1,27 +1,32 @@
-Simple class for PHP 5.3+ for using SSH
+SSH Client Class
+v 0.2
 
 Checking:
 $ php -m | grep ssh
 
 Installing:
-$ sudo apt-get install php5-dev php5-cli php-pear build-essential openssl-dev zlib1g-dev libssh2-1-dev 
+$ sudo apt-get install php5-dev php5-cli php-pear build-essential openssl-dev zlib1g-dev libssh2-1-dev
 $ sudo pecl install -f ssh2
 $ echo 'extension=ssh2.so' > /etc/php5/conf.d/ssh2.ini
 
 Using:
 |
 |- Connect:
-|  | $ssh = new ssh('localhost', 'root', 'password'[, $port = 22]);
+|  __construct([$host = "localhost"[, $login = "root"[, $password = ""[, $port = 22]]]]);
+|  | $ssh = new ssh('google.com', 'root', 'password'[, $port = 22]);
 |
 |- Exec command:
+|  
 |  | $result = $ssh("ls -la");
-|  | or
+|    or
 |  | $array_of_result = $ssh(array("ls -la", "uptime"));
-|  | or
+|    or
 |  | $array_of_result = $ssh("ls -la", "uptime");
+|    or
+|  | $array_of_result = $ssh(array("echo 1", "echo 2"), "echo 3", array(array("echo 4", "echo 5", "echo 6"), "echo 7"));
 |
 |- Tunnel:
-|  | $ssh-tunnel("10.0.0.100", 1234);
+|  | $f = $ssh->tunnel("10.0.0.100", 1234);
 |
 |- Download:
 |  | $ssh->download("/remote/file", "/local/file");
@@ -35,3 +40,4 @@ Using:
 |- Disconnect is automatic;
 
 Thx 4 using;
+
