@@ -1,30 +1,35 @@
 <?php
 
-/*
- * ssh client for using from php
+/**
+ * SSH Client Class
+ * v 0.2
  *
  * Checking:
  * $ php -m | grep ssh
- * 
+ *
  * Installing:
- * $ sudo apt-get install php5-dev php5-cli php-pear build-essential openssl-dev zlib1g-dev libssh2-1-dev 
+ * $ sudo apt-get install php5-dev php5-cli php-pear build-essential openssl-dev zlib1g-dev libssh2-1-dev
  * $ sudo pecl install -f ssh2
  * $ echo 'extension=ssh2.so' > /etc/php5/conf.d/ssh2.ini
  *
  * Using:
  * |
  * |- Connect:
- * |  | $ssh = new ssh('localhost', 'root', 'password'[, $port = 22]);
+ * |  __construct([$host = "localhost"[, $login = "root"[, $password = ""[, $port = 22]]]]);
+ * |  | $ssh = new ssh('google.com', 'root', 'password'[, $port = 22]);
  * |
  * |- Exec command:
+ * |  
  * |  | $result = $ssh("ls -la");
- * |  | or
+ * |    or
  * |  | $array_of_result = $ssh(array("ls -la", "uptime"));
- * |  | or
+ * |    or
  * |  | $array_of_result = $ssh("ls -la", "uptime");
+ * |    or
+ * |  | $array_of_result = $ssh(array("echo 1", "echo 2"), "echo 3", array(array("echo 4", "echo 5", "echo 6"), "echo 7"));
  * |
  * |- Tunnel:
- * |  | $ssh->tunnel("10.0.0.100", 1234);
+ * |  | $f = $ssh->tunnel("10.0.0.100", 1234);
  * |
  * |- Download:
  * |  | $ssh->download("/remote/file", "/local/file");
@@ -88,9 +93,7 @@ class ssh {
 	}
 
 	public function reconnect() {
-		if($this->connected) {
-			ssh2_exec($this->connect, 'exit');
-		}
+		$this->disconnect();
 		return $this->connect();
 	}
 
@@ -98,7 +101,7 @@ class ssh {
 		if( ! $this->connected) {
 			$this->connect();
 		}
-		ssh2_scp_recv($this->connect, $remote_file, $local_file);
+		return ssh2_scp_recv($this->connect, $remote_file, $local_file);
 	}
 
 	public function upload($local_file = "/", $remote_file = "/", $file_mode = 0644) {
@@ -119,27 +122,28 @@ class ssh {
 		return $this->connected;
 	}
 
-	private function exec($cmd) {
+	private function exec($c) {
 		if( ! $this->connected) {
 			$this->connect();
 		}
-		$data = "";
-		$stream = ssh2_exec($this->connect, $cmd);
-		if($stream) {
-			stream_set_blocking($stream, true);
-			while($buf = fread($stream, 4096)) {
-				$data .= $buf;
+		$d = "";
+		$s = ssh2_exec($this->connect, $c);
+		if($s) {
+			stream_set_blocking($s, TRUE);
+			while($b = fread($s, 4096)) {
+				$d  .= $b;
 			}
-			fclose($stream);
+			fclose($s);
 		} else {
 			print "Fail: Unable to execute command\n";
 		}
-		return $data;
+		return $d;
 	}
 
-	private function disconnect () {
+	private function disconnect() {
 		if($this->connected) {
 			ssh2_exec($this->connect, 'exit');
+			$this->connected = FALSE;
 		}
 	}
 }
