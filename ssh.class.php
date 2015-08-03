@@ -45,7 +45,7 @@
  * Thx 4 using;
  *
  */
-
+ 
 class ssh {
 	private $host      = "localhost";
 	private $login     = "root";
@@ -83,6 +83,40 @@ class ssh {
 			}
 		}
 		return $out;
+	}
+	
+	public function ls($path) {
+		if( ! $this->connected) {
+			$this->connect();
+		}
+		
+		$sftp = ssh2_sftp($this->connect);
+		
+		// some work-around for the root folder
+		if ($path == '/') {
+			$path = '/./';
+		} else {
+			$path = rtrim($path, '/').'/';
+		}
+		
+		// open the folder
+		$path = "ssh2.sftp://{$sftp}{$path}";
+		$dh = opendir($path);
+		
+		// gather the information
+		$files = array();
+		while (($file = readdir($dh)) !== false) {
+			if ($file == '.' || $file == '..') {
+				continue;
+			}
+			
+			$files[] = array(
+				'type' => filetype($path.$file),
+				'name' => $file,
+			);
+		}
+		
+		return $files;
 	}
 
 	public function tunnel($host = "localhost", $port = 22) {
