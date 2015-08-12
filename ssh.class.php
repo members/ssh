@@ -86,12 +86,15 @@ class ssh {
 	}
 	
 	public function ls($path) {
-		if( ! $this->connected) {
+		if (!$this->connected) {
 			$this->connect();
 		}
 		
 		$sftp = ssh2_sftp($this->connect);
 		
+	    // prepare the path for SSH
+	    $path = str_replace(array('/', '\\'), '/', $path);
+	    
 		// some work-around for the root folder
 		if ($path == '/') {
 			$path = '/./';
