@@ -86,8 +86,8 @@ class ssh {
 	}
 	
 	public function ls($path) {
-		if (!$this->connected) {
-			$this->connect();
+		if (!$this->connect()) {
+			return false;
 		}
 		
 		$sftp = ssh2_sftp($this->connect);
@@ -123,8 +123,8 @@ class ssh {
 	}
 
 	public function tunnel($host = "localhost", $port = 22) {
-		if( ! $this->connected) {
-			$this->connect();
+		if (!$this->connect()) {
+			return false;
 		}
 		return ssh2_tunnel($this->connect, $host, $port);
 	}
@@ -135,34 +135,39 @@ class ssh {
 	}
 
 	public function download($remote_file = "/", $local_file = "/") {
-		if( ! $this->connected) {
-			$this->connect();
+		if (!$this->connect()) {
+			return false;
 		}
 		return ssh2_scp_recv($this->connect, $remote_file, $local_file);
 	}
 
 	public function upload($local_file = "/", $remote_file = "/", $file_mode = 0644) {
-		if( ! $this->connected) {
-			$this->connect();
+		if (!$this->connect()) {
+			return false;
 		}
 		return ssh2_scp_send($this->connect, $local_file, $remote_file, $file_mode);
 	}
 
-	private function connect() {
-		if( ! $this->connected) {
-			$this->connect   = ssh2_connect($this->host, $this->port);
-			$this->connected = ssh2_auth_password($this->connect, $this->login, $this->password);
-			if ( ! $this->connected) {
-				print "Fail: Unable auth\n";
+	public function connect() {
+		if (!$this->connected) {
+			$this->connect = @ssh2_connect($this->host, $this->port);
+			if (!$this->connect) {
+				return false;
+			}
+
+			$this->connected = @ssh2_auth_password($this->connect, $this->login, $this->password);
+			if (!$this->connected) {
+				return false;
 			}
 		}
 		return $this->connected;
 	}
 
 	private function exec($c) {
-		if( ! $this->connected) {
-			$this->connect();
+		if (!$this->connect()) {
+			return false;
 		}
+
 		$d = "";
 		$s = ssh2_exec($this->connect, $c);
 		if($s) {
