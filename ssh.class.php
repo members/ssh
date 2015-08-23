@@ -85,12 +85,20 @@ class ssh {
 		return $out;
 	}
 	
+	/**
+	 * @brief get list of files in a $path on remote host
+	 * @param string $path 
+	 * @return array (empty array on some failure)
+	 */
 	public function ls($path) {
 		if (!$this->connect()) {
 			return false;
 		}
 		
 		$sftp = ssh2_sftp($this->connect);
+		if (!$sftp) {
+			return array();
+		}
 		
 	    // prepare the path for SSH
 	    $path = str_replace(array('/', '\\'), '/', $path);
@@ -102,19 +110,24 @@ class ssh {
 			$path = rtrim($path, '/').'/';
 		}
 		
+		// the final files list array
+		$files = array();
+		
 		// open the folder
 		$path = "ssh2.sftp://{$sftp}{$path}";
-		$dh = opendir($path);
+		$dh = @opendir($path);
+		if ($dh === false) {
+			return $files;
+		}
 		
 		// gather the information
-		$files = array();
-		while (($file = readdir($dh)) !== false) {
+		while (($file = @readdir($dh)) !== false) {
 			if ($file == '.' || $file == '..') {
 				continue;
 			}
 			
 			$files[] = array(
-				'type' => filetype($path.$file),
+				'type' => @filetype($path.$file) ?: 'file',
 				'name' => $file,
 			);
 		}
