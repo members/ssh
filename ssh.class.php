@@ -35,7 +35,7 @@
  * |  | $ssh->download("/remote/file", "/local/file");
  * |
  * |- Upload:
- * |  | $ssh->upload("/local/file", "/remote/file"[, $file_mode = 0644]);
+ * |  | $ssh->upload("/local/file", "/remote/file"[, $file_mode = 0777]);
  * |
  * |- Reconnect:
  * |  | $ssh->reconnect();
@@ -154,14 +154,14 @@ class ssh {
 		return @ssh2_scp_recv($this->connect, $remote_file, $local_file);
 	}
 
-	public function upload($local_file = "/", $remote_file = "/", $file_mode = 0644) {
+	public function upload($local_file = "/", $remote_file = "/", $file_mode = 0777) {
 		if (!$this->connect()) {
 			return false;
 		}
 		return @ssh2_scp_send($this->connect, $local_file, $remote_file, $file_mode);
 	}
 
-	public function mkdir($remote_folder, $mode = 0644) {
+	public function mkdir($remote_folder, $mode = 0777) {
 		if (!$this->connect()) {
 			return false;
 		}
