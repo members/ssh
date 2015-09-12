@@ -189,7 +189,7 @@ class ssh {
 		return $this->connected;
 	}
 
-	private function exec($c) {
+	public function exec($c) {
 		if (!$this->connect()) {
 			return false;
 		}
