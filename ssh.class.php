@@ -35,7 +35,7 @@
  * |  | $ssh->download("/remote/file", "/local/file");
  * |
  * |- Upload:
- * |  | $ssh->upload("/local/file", "/remote/file"[, $file_mode = 0644]);
+ * |  | $ssh->upload("/local/file", "/remote/file"[, $file_mode = 0777]);
  * |
  * |- Reconnect:
  * |  | $ssh->reconnect();
@@ -45,7 +45,7 @@
  * Thx 4 using;
  *
  */
-
+ 
 class ssh {
 	private $host      = "localhost";
 	private $login     = "root";
@@ -84,12 +84,62 @@ class ssh {
 		}
 		return $out;
 	}
+	
+	/**
+	 * @brief get list of files in a $path on remote host
+	 * @param string $path 
+	 * @return array (empty array on some failure)
+	 */
+	public function ls($path) {
+		if (!$this->connect()) {
+			return false;
+		}
+		
+		$sftp = @ssh2_sftp($this->connect);
+		if (!$sftp) {
+			return array();
+		}
+		
+	    // prepare the path for SSH
+	    $path = str_replace(array('/', '\\'), '/', $path);
+	    
+		// some work-around for the root folder
+		if ($path == '/') {
+			$path = '/./';
+		} else {
+			$path = rtrim($path, '/').'/';
+		}
+		
+		// the final files list array
+		$files = array();
+		
+		// open the folder
+		$path = "ssh2.sftp://{$sftp}{$path}";
+		$dh = @opendir($path);
+		if ($dh === false) {
+			return $files;
+		}
+		
+		// gather the information
+		while (($file = @readdir($dh)) !== false) {
+			if ($file == '.' || $file == '..') {
+				continue;
+			}
+			
+			$files[] = array(
+				'type' => @filetype($path.$file) ?: 'file',
+				'name' => $file,
+			);
+		}
+		
+		return $files;
+	}
 
 	public function tunnel($host = "localhost", $port = 22) {
-		if( ! $this->connected) {
-			$this->connect();
+		if (!$this->connect()) {
+			return false;
 		}
-		return ssh2_tunnel($this->connect, $host, $port);
+		return @ssh2_tunnel($this->connect, $host, $port);
 	}
 
 	public function reconnect() {
@@ -98,36 +148,54 @@ class ssh {
 	}
 
 	public function download($remote_file = "/", $local_file = "/") {
-		if( ! $this->connected) {
-			$this->connect();
+		if (!$this->connect()) {
+			return false;
 		}
-		return ssh2_scp_recv($this->connect, $remote_file, $local_file);
+		return @ssh2_scp_recv($this->connect, $remote_file, $local_file);
 	}
 
-	public function upload($local_file = "/", $remote_file = "/", $file_mode = 0644) {
-		if( ! $this->connected) {
-			$this->connect();
+	public function upload($local_file = "/", $remote_file = "/", $file_mode = 0777) {
+		if (!$this->connect()) {
+			return false;
 		}
-		return ssh2_scp_send($this->connect, $local_file, $remote_file, $file_mode);
+		return @ssh2_scp_send($this->connect, $local_file, $remote_file, $file_mode);
 	}
 
-	private function connect() {
-		if( ! $this->connected) {
-			$this->connect   = ssh2_connect($this->host, $this->port);
-			$this->connected = ssh2_auth_password($this->connect, $this->login, $this->password);
-			if ( ! $this->connected) {
-				print "Fail: Unable auth\n";
+	public function mkdir($remote_folder, $mode = 0777) {
+		if (!$this->connect()) {
+			return false;
+		}
+		
+		$sftp = @ssh2_sftp($this->connect);
+		if ($sftp === false) {
+			return false;
+		}
+		
+		return @ssh2_sftp_mkdir($sftp, $remote_folder, $mode);
+	}
+
+	public function connect() {
+		if (!$this->connected) {
+			$this->connect = @ssh2_connect($this->host, $this->port);
+			if (!$this->connect) {
+				return false;
+			}
+
+			$this->connected = @ssh2_auth_password($this->connect, $this->login, $this->password);
+			if (!$this->connected) {
+				return false;
 			}
 		}
 		return $this->connected;
 	}
 
-	private function exec($c) {
-		if( ! $this->connected) {
-			$this->connect();
+	public function exec($c) {
+		if (!$this->connect()) {
+			return false;
 		}
+
 		$d = "";
-		$s = ssh2_exec($this->connect, $c);
+		$s = @ssh2_exec($this->connect, $c);
 		if($s) {
 			stream_set_blocking($s, TRUE);
 			while($b = fread($s, 4096)) {
@@ -135,14 +203,16 @@ class ssh {
 			}
 			fclose($s);
 		} else {
-			print "Fail: Unable to execute command\n";
+			// Fail: Unable to execute command
+			return false;
 		}
+		
 		return $d;
 	}
 
 	private function disconnect() {
 		if($this->connected) {
-			ssh2_exec($this->connect, 'exit');
+			@ssh2_exec($this->connect, 'exit');
 			$this->connected = FALSE;
 		}
 	}
